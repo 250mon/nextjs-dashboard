@@ -6,8 +6,8 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
-} from "./definitions";
-import { formatCurrency } from "./utils";
+} from "@/app/lib/definitions";
+import { formatCurrency } from "@/app/lib/utils";
 
 export async function fetchRevenue() {
   try {
@@ -86,7 +86,7 @@ export async function fetchCardData() {
 const ITEMS_PER_PAGE = 6;
 export async function fetchFilteredInvoices(
   query: string,
-  currentPage: number
+  currentPage: number,
 ) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
