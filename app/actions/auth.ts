@@ -38,16 +38,13 @@ const registerSchema = signInSchema.extend({
     path: ["confirm_password"],
   });
 
-// 3. Input type
-type RegisterInput = z.infer<typeof registerSchema>;
-
 async function getUser(email: string): Promise<User | undefined> {
   try {
     const user = await sql<User>`SELECT * FROM users WHERE email=${email}`;
     return user.rows[0];
   } catch (error) {
     console.error("Failed to fetch user:", error);
-    throw new Error("Failed to fetch user.");
+    return undefined;
   }
 }
 
@@ -91,9 +88,9 @@ export async function authenticate(
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return "Invalid credentials.";
+          return "Invalid email or password";
         default:
-          return "Something went wrong.";
+          return "Something went wrong. Please try again.";
       }
     }
     throw error;
@@ -131,14 +128,26 @@ export async function signUp(
     // 3. Insert the user into the database
     let insertedUser;
     try {
+      // Generate a unique slug by combining name and a unique identifier
+      const baseSlug = parsedCredentials.data.name.toLowerCase().replace(/\s+/g, '-');
+      const uniqueId = Math.random().toString(36).substring(2, 8); // 6 random characters
+      const slug = `${baseSlug}-${uniqueId}`;
+
       await sql`
-        INSERT INTO users (name, email, password)
-        VALUES (${parsedCredentials.data.name}, ${parsedCredentials.data.email}, ${hashedPassword})
+        INSERT INTO users (name, email, password, slug, is_admin, team)
+        VALUES (
+          ${parsedCredentials.data.name}, 
+          ${parsedCredentials.data.email}, 
+          ${hashedPassword},
+          ${slug},
+          false,
+          'default'
+        )
         RETURNING id
       `;
       
       const result = await sql<User>`
-        SELECT id FROM users WHERE email = ${parsedCredentials.data.email}
+        SELECT * FROM users WHERE email = ${parsedCredentials.data.email}
       `;
       
       if (!result.rows[0]) {

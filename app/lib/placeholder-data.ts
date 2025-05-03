@@ -6,6 +6,16 @@ const users = [
     name: 'User',
     email: 'user@nextmail.com',
     password: '123456',
+    isadmin: false,
+    team: 'team1',
+  },
+  {
+    id: '410544b2-4001-4271-9855-fec4b6a6442b',
+    name: 'Admin',
+    email: 'admin@nextmail.com',
+    password: '123456',
+    isadmin: true,
+    team: 'team1',
   },
 ];
 

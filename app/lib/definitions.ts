@@ -7,6 +7,9 @@ export type User = {
   name: string;
   email: string;
   password: string;
+  isadmin: boolean;
+  team: string;
+  slug: string;
 };
 
 export type Customer = {

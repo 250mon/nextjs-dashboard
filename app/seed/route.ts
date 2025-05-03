@@ -1,8 +1,16 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { db } from "@vercel/postgres";
 import { invoices, customers, revenue, users } from "@/app/lib/placeholder-data";
 
 const client = await db.connect();
+
+async function resetDatabase() {
+  // Drop tables in reverse order of dependencies
+  await client.sql`DROP TABLE IF EXISTS revenue`;
+  await client.sql`DROP TABLE IF EXISTS invoices`;
+  await client.sql`DROP TABLE IF EXISTS customers`;
+  await client.sql`DROP TABLE IF EXISTS users`;
+}
 
 async function seedUsers() {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -11,16 +19,20 @@ async function seedUsers() {
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
+      password TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      isadmin BOOLEAN DEFAULT FALSE,
+      team TEXT
     );
   `;
 
   const insertedUsers = await Promise.all(
     users.map(async (user) => {
       const hashedPassword = await bcrypt.hash(user.password, 10);
+      const slug = user.name.toLowerCase().replace(/\s+/g, '-');
       return client.sql`
-        INSERT INTO users (id, name, email, password)
-        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword})
+        INSERT INTO users (id, name, email, password, slug, isadmin, team)
+        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword}, ${slug}, ${user.isadmin}, ${user.team})
         ON CONFLICT (id) DO NOTHING;
       `;
     })
@@ -104,13 +116,19 @@ async function seedRevenue() {
 export async function GET() {
   try {
     await client.sql`BEGIN`;
+    
+    // Reset the database first
+    await resetDatabase();
+    
+    // Then seed the data in the correct order
     await seedUsers();
     await seedCustomers();
     await seedInvoices();
     await seedRevenue();
+    
     await client.sql`COMMIT`;
 
-    return Response.json({ message: "Database seeded successfully" });
+    return Response.json({ message: "Database reset and seeded successfully" });
   } catch (error) {
     await client.sql`ROLLBACK`;
     return Response.json({ error }, { status: 500 });
