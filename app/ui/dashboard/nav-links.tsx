@@ -4,6 +4,7 @@ import {
   UserGroupIcon,
   HomeIcon,
   DocumentDuplicateIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,16 +17,28 @@ interface NavLinksProps {
 
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
-const getLinks = (user: User | null) => [
-  { name: "Home", href: "/dashboard", icon: HomeIcon },
-  {
-    name: "Invoices",
-    href: "/dashboard/invoices",
-    icon: DocumentDuplicateIcon,
-  },
-  { name: "Customers", href: "/dashboard/customers", icon: UserGroupIcon },
-  { name: "Profile", href: `/profile/${user?.slug || ''}`, icon: UserGroupIcon },
-];
+const getLinks = (user: User | null) => {
+  const baseLinks = [
+    { name: "Home", href: "/dashboard", icon: HomeIcon },
+    {
+      name: "Invoices",
+      href: "/dashboard/invoices",
+      icon: DocumentDuplicateIcon,
+    },
+    { name: "Customers", href: "/dashboard/customers", icon: UserGroupIcon },
+  ];
+
+  // Only add profile link if user is logged in
+  if (user) {
+    baseLinks.push({ 
+      name: "Profile", 
+      href: `/profile/${user.slug}`, 
+      icon: UserIcon 
+    });
+  }
+
+  return baseLinks;
+};
 
 export default function NavLinks({ user }: NavLinksProps) {
   const pathname = usePathname();
